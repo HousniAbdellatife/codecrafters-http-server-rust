@@ -95,7 +95,7 @@ fn return_file(path: &str) -> Vec<u8> {
     response.push_str("Content-Type: application/octet-stream\r\n");
     response.push_str(format!("Content-Length: {}\r\n\r\n", file.len()).as_str());
     response.push_str(String::from_utf8(file).unwrap().as_str());
-
+    println!("response: {}", response);
     response.into_bytes()
 }
 fn user_agent_response(text: &String) -> String{
@@ -164,6 +164,7 @@ fn parse_http_request(mut stream: &TcpStream) -> Result<HttpRequest, &'static st
         let content_length = headers.get(CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
         let mut body_u8 = vec![0u8; content_length as usize];
         reader.read_exact(&mut body_u8).unwrap();
+        body.push_str(&String::from_utf8(body_u8).unwrap());
     }else if method == "GET" {
         body.push_str("");
     }

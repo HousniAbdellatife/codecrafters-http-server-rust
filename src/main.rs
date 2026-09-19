@@ -2,14 +2,12 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 #[allow(unused_imports)]
 use std::net::TcpListener;
-use std::net::{Shutdown, TcpStream};
+use std::net::TcpStream;
 use std::{env, fs, thread};
-use std::fs::read;
-use std::ops::Add;
 use std::path::Path;
-use std::time::Duration;
 
 const OK_200: &[u8] = "HTTP/1.1 200 OK\r\n\r\n".as_bytes();
+const CREATED_201: &[u8] = b"HTTP/1.1 201 Created\r\n\r\n";
 const NOT_FOUND_404: &[u8] = "HTTP/1.1 404 Not Found\r\n\r\n".as_bytes();
 
 const CONTENT_LENGTH : &str = "Content-Length";
@@ -56,7 +54,7 @@ fn main() {
                                 stream.write_all(&response).unwrap();
                             }else if http_request.method == "POST" {
                                 create_file(path, http_request.body.as_bytes());
-                                stream.write_all("HTTP/1.1 201 Created\r\n\r\n".as_bytes()).unwrap();
+                                stream.write_all(CREATED_201).unwrap();
                             }
 
                         }

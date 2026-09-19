@@ -1,19 +1,23 @@
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 #[allow(unused_imports)]
 use std::net::TcpListener;
 use std::net::{Shutdown, TcpStream};
 use std::{env, fs, thread};
-use std::fmt::format;
+use std::fs::read;
+use std::ops::Add;
 use std::path::Path;
+use std::time::Duration;
 
 const OK_200: &[u8] = "HTTP/1.1 200 OK\r\n\r\n".as_bytes();
 const NOT_FOUND_404: &[u8] = "HTTP/1.1 404 Not Found\r\n\r\n".as_bytes();
 
+const CONTENT_LENGTH : &str = "Content-Length";
+
 
 struct HttpRequest {
     method: String,
-    path: String,
+    target: String,
     headers: HashMap<String, String>,
     body: String
 }
@@ -31,10 +35,11 @@ fn main() {
                 //
                 thread::spawn(move || {
                     println!("accepted new connection");
+
                     let http_request = parse_http_request(&stream)
                         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)).unwrap();
 
-                    match http_request.path.as_str() {
+                    match http_request.target.as_str() {
                         "/" => {stream.write_all(OK_200).unwrap();}
                         e if e.starts_with("/files") => {
 
@@ -125,56 +130,45 @@ fn http_echo(request_line: &str) -> String {
     )
 }
 
-
-fn read_stream(mut stream: &TcpStream) -> Result<String, &'static str> {
-
-    let mut buffer = [0; 1024];
-    let mut request: Vec<u8> = Vec::new();
-
-    loop {
-        let n = stream.read(&mut buffer)
-            .map_err(|_| "failed to read from tcp stream")?;
-
-        if n == 0 {
-            break;
-        }
-
-        request.extend_from_slice(&buffer[..n]);
-
-        if request.windows(4).any(|x| x == b"\r\n\r\n") {
-            break;
-        }
-    }
-
-    Ok(String::from_utf8(request)
-        .map_err(|_| "failed to transform into UTF-8")?)
-}
-
 fn parse_http_request(mut stream: &TcpStream) -> Result<HttpRequest, &'static str> {
 
-    let request = read_stream(&mut stream)?;
-    let mut lines = request.lines();
 
-    // first part
-    let mut request_line = lines.next().unwrap().split_whitespace();
+    let mut request_line = String::new();
+    let mut headers: HashMap<String, String> = HashMap::new();
+    let mut body = String::new();
+
+    let mut reader = BufReader::new(&mut stream);
+
+    //
+    reader.read_line(&mut request_line).expect("TODO: panic message");
+    let mut request_line = request_line.split_whitespace();
     let method = request_line.next().unwrap().to_string();
     let target = request_line.next().unwrap().to_string();
     let http_version = request_line.next().unwrap().to_string();
 
-    //  headers
-    let mut headers: HashMap<String, String> = HashMap::new();
-    for line in lines {
-        if line.is_empty() {break;}
-        let (key, value) = line.split_once(':').unwrap();
-        headers.insert(key.trim().to_string(), value.trim().to_string());
+    //
+    let mut header = String::new();
+    loop {
+        reader.read_line(&mut header);
+        if header.is_empty() {
+            break;
+        }else {
+            let (k, v) = header.split_once(':').unwrap();
+            headers.insert(k.trim().to_string(), v.trim().to_string());
+        }
     }
 
-    // body
+    //
+    let body_length = headers.get(CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
+    let mut body_u8: Vec<u8> = Vec::with_capacity(body_length as usize);
+    reader.read(&mut body_u8).unwrap();
+    body.push_str(&String::from_utf8(body_u8).unwrap());
+
 
     Ok(HttpRequest {
-        method: method,
-        path: target,
-        headers: headers,
-        body: "".to_string(),
+        method,
+        target,
+        headers,
+        body,
     })
 }

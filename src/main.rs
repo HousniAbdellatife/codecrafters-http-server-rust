@@ -32,7 +32,7 @@ fn main() {
                     "/" => {stream.write_all(OK_200).unwrap();}
                     e if e.starts_with("/user-agent") => {
                             stream.write_all(
-                                user_agent_response(http_request.headers.get("").unwrap()).as_bytes()
+                                user_agent_response(http_request.headers.get("User-Agent").unwrap()).as_bytes()
                             ).expect("panic");
                          }
                     e if e.starts_with("/echo") => {stream.write_all(http_echo(e).as_bytes()).unwrap();}

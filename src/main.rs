@@ -5,6 +5,7 @@ use std::net::TcpListener;
 use std::net::{Shutdown, TcpStream};
 use std::{env, fs, thread};
 use std::fmt::format;
+use std::path::Path;
 
 const OK_200: &[u8] = "HTTP/1.1 200 OK\r\n\r\n".as_bytes();
 const NOT_FOUND_404: &[u8] = "HTTP/1.1 404 Not Found\r\n\r\n".as_bytes();
@@ -74,7 +75,9 @@ fn main() {
 }
 
 fn create_file(path: String, content: &[u8]) {
-    fs::write(path, content).unwrap();
+    let path = Path::new(&path);
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, content).expect("panic to write the file");
 }
 
 fn return_file(path: &str) -> Vec<u8> {

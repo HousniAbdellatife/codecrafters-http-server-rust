@@ -116,8 +116,8 @@ fn parse_http_request(mut stream: &TcpStream) -> Result<HttpRequest, &'static st
     let mut headers: HashMap<String, String> = HashMap::new();
     for line in lines {
         if line.is_empty() {break;}
-        let (key, value) = line.split_at(line.find(":").unwrap());
-        headers.insert(key.to_string(), value.to_string());
+        let (key, value) = line.split_once(':').unwrap();
+        headers.insert(key.trim().to_string(), value.trim().to_string());
     }
 
     // body

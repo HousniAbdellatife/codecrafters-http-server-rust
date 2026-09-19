@@ -149,8 +149,9 @@ fn parse_http_request(mut stream: &TcpStream) -> Result<HttpRequest, &'static st
     //
     let mut header = String::new();
     loop {
-        reader.read_line(&mut header);
-        if header.is_empty() {
+        header.clear();
+        reader.read_line(&mut header).unwrap();
+        if header.is_empty() || header == "\r\n" {
             break;
         }else {
             let (k, v) = header.split_once(':').unwrap();
@@ -159,16 +160,15 @@ fn parse_http_request(mut stream: &TcpStream) -> Result<HttpRequest, &'static st
     }
 
     //
-    let body_length = headers.get(CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
-    let mut body_u8: Vec<u8> = Vec::with_capacity(body_length as usize);
-    reader.read(&mut body_u8).unwrap();
-    body.push_str(&String::from_utf8(body_u8).unwrap());
+    let content_length = headers.get(CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
+    let mut body = vec![0u8; content_length as usize];
+    reader.read_exact(&mut body).unwrap();
 
 
     Ok(HttpRequest {
         method,
         target,
         headers,
-        body,
+        body: String::from_utf8(body).unwrap(),
     })
 }

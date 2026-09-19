@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::io::{Read, Write};
 #[allow(unused_imports)]
 use std::net::TcpListener;
-use std::net::TcpStream;
-use std::thread;
+use std::net::{Shutdown, TcpStream};
+use std::{env, fs, thread};
+use std::fmt::format;
 
 const OK_200: &[u8] = "HTTP/1.1 200 OK\r\n\r\n".as_bytes();
 const NOT_FOUND_404: &[u8] = "HTTP/1.1 404 Not Found\r\n\r\n".as_bytes();
@@ -34,6 +35,16 @@ fn main() {
 
                     match http_request.path.as_str() {
                         "/" => {stream.write_all(OK_200).unwrap();}
+                        e if e.starts_with("/files") => {
+                            let dir = env::var("--directory").unwrap();
+                            let file_name = e.split('/').last().unwrap();
+                            let path = format!("{}/{}", dir, file_name);
+
+                            let response = return_file(path.as_str());
+
+                            stream.write_all(&response).unwrap();
+
+                        }
                         e if e.starts_with("/user-agent") => {
                             stream.write_all(
                                 user_agent_response(http_request.headers.get("User-Agent").unwrap()).as_bytes()
@@ -53,6 +64,21 @@ fn main() {
     }
 }
 
+fn return_file(path: &str) -> Vec<u8> {
+    let file_exists = fs::exists(path).unwrap();
+    if !file_exists {
+        return NOT_FOUND_404.to_vec();
+    }
+
+    let file = fs::read(path).unwrap();
+    let mut response = String::new();
+    response.push_str("HTTP/1.1 200 OK\r\n");
+    response.push_str("Content-Type: application/octet-stream\r\n");
+    response.push_str(format!("Content-Length: {}\r\n\r\n", file.len() / 4).as_str());
+    response.push_str(String::from_utf8(file).unwrap().as_str());
+
+    response.into_bytes()
+}
 fn user_agent_response(text: &String) -> String{
     format!(
         "HTTP/1.1 200 OK\r\n\

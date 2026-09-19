@@ -76,7 +76,7 @@ fn return_file(path: &str) -> Vec<u8> {
     let mut response = String::new();
     response.push_str("HTTP/1.1 200 OK\r\n");
     response.push_str("Content-Type: application/octet-stream\r\n");
-    response.push_str(format!("Content-Length: {}\r\n\r\n", file.len() / 4).as_str());
+    response.push_str(format!("Content-Length: {}\r\n\r\n", file.len()).as_str());
     response.push_str(String::from_utf8(file).unwrap().as_str());
 
     response.into_bytes()

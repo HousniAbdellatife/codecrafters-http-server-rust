@@ -29,6 +29,7 @@ fn main() {
 
                 match request_target {
                     "/" => {stream.write_all(OK_200).unwrap();}
+                    e if e.starts_with("/echo") => {stream.write_all(http_echo(e).as_bytes()).unwrap();}
                     _ => {stream.write_all(NOT_FOUND_404).unwrap();}
                 }
             }
@@ -37,6 +38,24 @@ fn main() {
             }
         }
     }
+}
+
+fn http_echo(request_line: &str) -> String {
+    let text = request_line
+        .split('/')
+        .skip(2)
+        .next()
+        .unwrap().trim();
+
+    format!(
+        "HTTP/1.1 200 OK\r\n\
+         Content-Type: text/plain\r\n\
+         Content-Length: {}\r\n\
+         \r\n\
+         {}",
+        text.len(),
+        text
+    )
 }
 
 fn get_request_target(url: &str) -> &str {

@@ -3,6 +3,7 @@ use std::io::{Read, Write};
 #[allow(unused_imports)]
 use std::net::TcpListener;
 use std::net::TcpStream;
+use std::thread;
 
 const OK_200: &[u8] = "HTTP/1.1 200 OK\r\n\r\n".as_bytes();
 const NOT_FOUND_404: &[u8] = "HTTP/1.1 404 Not Found\r\n\r\n".as_bytes();
@@ -23,21 +24,27 @@ fn main() {
 
     for stream in listener.incoming() {
         match stream {
-            Ok(mut stream) => {
-                println!("accepted new connection");
-                let http_request = parse_http_request(&stream)
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)).unwrap();
 
-                match http_request.path.as_str() {
-                    "/" => {stream.write_all(OK_200).unwrap();}
-                    e if e.starts_with("/user-agent") => {
+            Ok(mut stream) => {
+                //
+                thread::spawn(move || {
+                    println!("accepted new connection");
+                    let http_request = parse_http_request(&stream)
+                        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)).unwrap();
+
+                    match http_request.path.as_str() {
+                        "/" => {stream.write_all(OK_200).unwrap();}
+                        e if e.starts_with("/user-agent") => {
                             stream.write_all(
                                 user_agent_response(http_request.headers.get("User-Agent").unwrap()).as_bytes()
                             ).expect("panic");
-                         }
-                    e if e.starts_with("/echo") => {stream.write_all(http_echo(e).as_bytes()).unwrap();}
-                    _ => {stream.write_all(NOT_FOUND_404).unwrap();}
-                }
+                        }
+                        e if e.starts_with("/echo") => {stream.write_all(http_echo(e).as_bytes()).unwrap();}
+                        _ => {stream.write_all(NOT_FOUND_404).unwrap();}
+                    }
+                });
+
+                //
             }
             Err(e) => {
                 println!("error: {}", e);

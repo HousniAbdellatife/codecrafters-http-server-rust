@@ -158,15 +158,20 @@ fn parse_http_request(mut stream: &TcpStream) -> Result<HttpRequest, &'static st
     }
 
     //
-    let content_length = headers.get(CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
-    let mut body = vec![0u8; content_length as usize];
-    reader.read_exact(&mut body).unwrap();
 
+    let mut body = String::new();
+    if method == "POST" {
+        let content_length = headers.get(CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
+        let mut body_u8 = vec![0u8; content_length as usize];
+        reader.read_exact(&mut body_u8).unwrap();
+    }else if method == "GET" {
+        body.push_str("");
+    }
 
     Ok(HttpRequest {
         method,
         target,
         headers,
-        body: String::from_utf8(body).unwrap(),
+        body,
     })
 }

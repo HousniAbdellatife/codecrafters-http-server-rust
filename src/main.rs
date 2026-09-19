@@ -36,7 +36,9 @@ fn main() {
                     match http_request.path.as_str() {
                         "/" => {stream.write_all(OK_200).unwrap();}
                         e if e.starts_with("/files") => {
-                            let dir = env::var("--directory").unwrap();
+                            let env_args: Vec<String> = env::args().collect();
+                            let dir = env_args[2].clone();
+                            println!("{}", dir);
                             let file_name = e.split('/').last().unwrap();
                             let path = format!("{}/{}", dir, file_name);
 

@@ -36,15 +36,22 @@ fn main() {
                     match http_request.path.as_str() {
                         "/" => {stream.write_all(OK_200).unwrap();}
                         e if e.starts_with("/files") => {
+
                             let env_args: Vec<String> = env::args().collect();
                             let dir = env_args[2].clone();
-                            println!("{}", dir);
+
                             let file_name = e.split('/').last().unwrap();
                             let path = format!("{}/{}", dir, file_name);
 
-                            let response = return_file(path.as_str());
+                            if http_request.method == "GET" {
 
-                            stream.write_all(&response).unwrap();
+                                let response = return_file(path.as_str());
+
+                                stream.write_all(&response).unwrap();
+                            }else if http_request.method == "POST" {
+                                create_file(path, http_request.body.as_bytes());
+                                stream.write_all("HTTP/1.1 201 Created\r\n\r\n".as_bytes()).unwrap();
+                            }
 
                         }
                         e if e.starts_with("/user-agent") => {
@@ -64,6 +71,10 @@ fn main() {
             }
         }
     }
+}
+
+fn create_file(path: String, content: &[u8]) {
+    fs::write(path, content).unwrap();
 }
 
 fn return_file(path: &str) -> Vec<u8> {

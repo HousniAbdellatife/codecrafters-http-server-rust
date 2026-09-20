@@ -23,7 +23,7 @@ pub fn handle_connection(mut stream: TcpStream){
 
             let target = http_request.target.as_str();
 
-            let response = match target {
+            let mut response = match target {
                 ROOT_TARGET => handle_root_target(),
                 e if target.starts_with(FILES_TARGET) => handle_files_target(&http_request),
                 e if target.starts_with(USER_AGENT_TARGET) => handle_user_agent_target(&http_request),
@@ -33,7 +33,7 @@ pub fn handle_connection(mut stream: TcpStream){
 
             let mut close = false;
            if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap().to_string() == "close" {
-                http_request.headers.insert("Connection".to_string(), String::from("close"));
+                response.headers.insert("Connection".to_string(), String::from("close"));
                 close = true;
            }
 

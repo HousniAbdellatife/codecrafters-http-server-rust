@@ -67,7 +67,7 @@ fn main() {
                         _ => {stream.write_all(NOT_FOUND_404).unwrap();}
                     }
                     // close
-                        if http_request.headers.get("Connection").unwrap() == "close" { break; }
+                        if http_request.headers.get("Connection").or(None).unwrap() == "close" { break; }
                     }
                 });
 

@@ -65,7 +65,10 @@ fn main() {
                         }
                         e if e.starts_with("/echo") => {stream.write_all(http_echo(e).as_bytes()).unwrap();}
                         _ => {stream.write_all(NOT_FOUND_404).unwrap();}
-                    }}
+                    }
+                    // close
+                        if http_request.headers.get("Connection").unwrap() == "close" { break; }
+                    }
                 });
 
                 //

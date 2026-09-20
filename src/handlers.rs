@@ -37,8 +37,12 @@ pub fn handle_connection(mut stream: TcpStream){
                 close = true;
            }
 
-            if http_request.headers.get("Accept-Encoding").or(Some(&String::from("identity"))).unwrap().to_string() == "gzip" {
-                response.headers.insert("Content-Encoding".to_string(), "gzip".to_string());
+            if http_request.headers.contains_key("Accept-Encoding") {
+                let gzip = http_request.headers.get("Accept-Encoding").unwrap().split(',')
+                    .map(|s| s.trim().to_string())
+                    .any(|s| s == "gzip");
+
+                if gzip {response.headers.insert("Content-Encoding".to_string(), "gzip".to_string());}
             }
 
             stream.write_all(response.build().as_bytes()).unwrap();

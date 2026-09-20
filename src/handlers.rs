@@ -65,7 +65,7 @@ fn create_file(http_request: &HttpRequest, path: &str) -> HttpResponse {
 
     HttpResponse {
         status_code: 201,
-        reason_phrase: "CREATED".to_string(),
+        reason_phrase: "Created".to_string(),
         body: String::new(),
         headers: HashMap::new()
     }

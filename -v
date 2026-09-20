@@ -1,0 +1,18 @@
+== Info: Host localhost:4221 was resolved.
+== Info: IPv6: ::1
+== Info: IPv4: 127.0.0.1
+== Info:   Trying [::1]:4221...
+== Info: connect to ::1 port 4221 from ::1 port 59689 failed: Connection refused
+== Info:   Trying 127.0.0.1:4221...
+== Info: Connected to localhost (127.0.0.1) port 4221
+=> Send header, 77 bytes (0x4d)
+0000: GET / HTTP/1.1
+0010: Host: localhost:4221
+0026: User-Agent: curl/8.7.1
+003e: Accept: */*
+004b: 
+== Info: Request completely sent off
+<= Recv header, 17 bytes (0x11)
+0000: HTTP/1.1 200 OK
+<= Recv header, 2 bytes (0x2)
+0000: 

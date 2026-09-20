@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 
 pub const OK_200: &[u8] = b"HTTP/1.1 200 OK\r\n\r\n";
 pub const CREATED_201: &[u8] = b"HTTP/1.1 201 Created\r\n\r\n";
@@ -27,21 +28,32 @@ impl HttpResponse {
     pub fn build(&self) -> String {
         let mut response = String::new();
 
-        // status line
-        let status_line = format!("{} {} {}\r\n", HTTP_VERSION, self.status_code, self.reason_phrase);
-        response.push_str(&status_line);
+        response.push_str(&format!(
+            "{} {} {}\r\n",
+            HTTP_VERSION,
+            self.status_code,
+            self.reason_phrase
+        ));
 
-        // headers
-        for (key, val) in self.headers.iter() {
-            response.push_str(&format!("{}: {}\r\n", key.trim(), val.trim()));
+        for (key, val) in &self.headers {
+            response.push_str(&format!(
+                "{}: {}\r\n",
+                key.trim(),
+                val.trim()
+            ));
         }
+
+        // Always specify body length
+        response.push_str(&format!(
+            "Content-Length: {}\r\n",
+            self.body.len()
+        ));
+
+        // End headers
         response.push_str("\r\n");
 
-        // body
-        if self.body.len() > 0 {
-            response.push_str(self.body.as_str());
-            response.push_str("\r\n");
-        }
+        // Body, possibly empty
+        response.push_str(&self.body);
 
         response
     }

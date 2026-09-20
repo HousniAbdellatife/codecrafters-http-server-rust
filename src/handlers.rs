@@ -133,7 +133,7 @@ fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
 fn no_handlers_found() -> HttpResponse {
     HttpResponse {
         status_code: 404,
-        reason_phrase: "NOT FOUND".to_string(),
+        reason_phrase: "Not Found".to_string(),
         headers: HashMap::new(),
         body: "".to_string(),
     }

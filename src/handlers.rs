@@ -15,7 +15,7 @@ const USER_AGENT_TARGET: &str = "/user-agent";
 
 const ECHO_TARGET: &str = "/echo";
 
-pub fn handle_connection(mut stream: TcpStream) {
+pub fn handle_connection(mut stream: TcpStream){
     thread::spawn(move || {
         loop {
             let mut http_request = HttpRequest::parse(&stream)
@@ -32,10 +32,10 @@ pub fn handle_connection(mut stream: TcpStream) {
             };
 
             let mut close = false;
-           // if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap().to_string() == "close" {
+           if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap().to_string() == "close" {
                 http_request.headers.insert("Connection".to_string(), String::from("close"));
-             //   close = true;
-           // }
+                close = true;
+           }
 
             stream.write_all(response.build().as_bytes()).unwrap();
 

@@ -26,10 +26,6 @@ fn main() {
         match stream {
             Ok(stream) => {
                handlers::handle_connection(stream);
-                     
-                // if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap() == "close" {
-                //     println!("Closing connection");
-                //     break; }
             }
             Err(e) => {
                 println!("error: {}", e);

@@ -11,9 +11,9 @@ use crate::http::response::HttpResponse;
 const ROOT_TARGET: &str = "/";
 const FILES_TARGET: &str = "/files";
 
-const USER_AGENT_TARGET: &str = "user-agent";
+const USER_AGENT_TARGET: &str = "/user-agent";
 
-const ECHO_TARGET: &str = "echo";
+const ECHO_TARGET: &str = "/echo";
 
 pub fn handle_connection(mut stream: TcpStream) {
     thread::spawn(move || {

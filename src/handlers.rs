@@ -32,10 +32,10 @@ pub fn handle_connection(mut stream: TcpStream) {
             };
 
             let mut close = false;
-            if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap().to_string() == "close" {
+           // if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap().to_string() == "close" {
                 http_request.headers.insert("Connection".to_string(), String::from("close"));
-                close = true;
-            }
+             //   close = true;
+           // }
 
             stream.write_all(response.build().as_bytes()).unwrap();
 

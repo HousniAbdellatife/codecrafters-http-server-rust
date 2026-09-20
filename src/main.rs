@@ -33,7 +33,7 @@ fn main() {
                 //
                 thread::spawn(move || {
                     println!("accepted new connection");
-
+                    loop {
                     let http_request = parse_http_request(&stream)
                         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)).unwrap();
 
@@ -65,7 +65,7 @@ fn main() {
                         }
                         e if e.starts_with("/echo") => {stream.write_all(http_echo(e).as_bytes()).unwrap();}
                         _ => {stream.write_all(NOT_FOUND_404).unwrap();}
-                    }
+                    }}
                 });
 
                 //

@@ -26,23 +26,23 @@ impl HttpResponse {
 
     pub fn build(&self) -> String {
         let mut response = String::new();
-        
+
         // status line
-        let status_line = format!("{} {} {}\r\r", HTTP_VERSION, self.status_code, self.reason_phrase);
+        let status_line = format!("{} {} {}\r\n", HTTP_VERSION, self.status_code, self.reason_phrase);
         response.push_str(&status_line);
-        
+
         // headers
         for (key, val) in self.headers.iter() {
             response.push_str(&format!("{}: {}\r\n", key.trim(), val.trim()));
         }
         response.push_str("\r\n");
-        
+
         // body
         if self.body.len() > 0 {
             response.push_str(self.body.as_str());
             response.push_str("\r\n");
         }
-        
+
         response
     }
 }

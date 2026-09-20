@@ -37,6 +37,10 @@ pub fn handle_connection(mut stream: TcpStream){
                 close = true;
            }
 
+            if http_request.headers.contains_key("Accept-Encoding") {
+                response.headers.insert("Content-Encoding".to_string(), http_request.headers["Accept-Encoding"].to_string());
+            }
+
             stream.write_all(response.build().as_bytes()).unwrap();
 
             if close { break }

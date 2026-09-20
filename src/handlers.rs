@@ -75,7 +75,7 @@ fn load_file(path: &str) -> HttpResponse {
     if !file_exists {
         return HttpResponse {
             status_code: 404,
-            reason_phrase: "NOT FOUND".to_string(),
+            reason_phrase: "Not Found".to_string(),
             headers: HashMap::new(),
             body: String::new(),
         };

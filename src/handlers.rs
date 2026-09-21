@@ -71,22 +71,13 @@ fn create_file(http_request: &HttpRequest, path: &str) -> HttpResponse {
     fs::write(path, http_request.body.as_bytes()).expect("panic to write the file");
 
 
-    HttpResponse {
-        status_code: 201,
-        reason_phrase: "Created".to_string(),
-        body: String::new(),
-        headers: HashMap::new()
-    }
+    HttpResponse::new(201, "Created".to_string(), HashMap::new(), "".to_string())
+
 }
 fn load_file(path: &str) -> HttpResponse {
     let file_exists = fs::exists(path).unwrap();
     if !file_exists {
-        return HttpResponse {
-            status_code: 404,
-            reason_phrase: "Not Found".to_string(),
-            headers: HashMap::new(),
-            body: String::new(),
-        };
+        return HttpResponse::new(404, String::from("Not Found"), HashMap::new(), String::from(""))
     }
 
     let file = fs::read(path).unwrap();
@@ -95,12 +86,8 @@ fn load_file(path: &str) -> HttpResponse {
     headers.insert("Content-Type".to_string(), "application/octet-stream".to_string());
     headers.insert("Content-Length".to_string(), file.len().to_string());
 
-    HttpResponse {
-        status_code: 200,
-        reason_phrase: "OK".to_string(),
-        headers,
-        body: String::from_utf8(file).unwrap()
-    }
+
+    HttpResponse::new(200, "OK".to_string(), headers, String::from_utf8_lossy(&file).to_string())
 }
 
 fn handle_echo_target(http_request: &HttpRequest) -> HttpResponse {

@@ -13,6 +13,25 @@ const FILES_TARGET: &str = "/files";
 const USER_AGENT_TARGET: &str = "/user-agent";
 
 const ECHO_TARGET: &str = "/echo";
+
+const GET_METHOD: &str = "GET";
+
+const CONNECTION_HEADER: &str = "Connection";
+const ACCEPT_ENCODING_HEADER: &str = "Accept-Encoding";
+const CONTENT_ENCODING_HEADER: &str = "Content-Encoding";
+const CONTENT_TYPE_HEADER: &str = "Content-Type";
+const USER_AGENT_HEADER: &str = "User-Agent";
+
+const CLOSE_VALUE: &str = "close";
+const GZIP_VALUE: &str = "gzip";
+const OCTET_STREAM_CONTENT_TYPE: &str = "application/octet-stream";
+const TEXT_PLAIN_CONTENT_TYPE: &str = "text/plain";
+
+const OK_REASON: &str = "OK";
+const CREATED_REASON: &str = "Created";
+const NOT_FOUND_REASON: &str = "Not Found";
+const EMPTY_BODY: &str = "";
+
 pub fn handle_connection(stream: TcpStream){
     thread::spawn(move || {
         // Keep this reader for the entire connection. It may already contain
@@ -36,17 +55,17 @@ pub fn handle_connection(stream: TcpStream){
             };
 
             let mut close = false;
-           if http_request.headers.get("Connection").or(Some(&String::from("None"))).unwrap().to_string() == "close" {
-                response.headers.insert("Connection".to_string(), String::from("close"));
+           if http_request.headers.get(CONNECTION_HEADER).is_some_and(|value| value == CLOSE_VALUE) {
+                response.headers.insert(CONNECTION_HEADER.to_string(), CLOSE_VALUE.to_string());
                 close = true;
            }
 
-            if http_request.headers.contains_key("Accept-Encoding") {
-                let gzip = http_request.headers.get("Accept-Encoding").unwrap().split(',')
+            if http_request.headers.contains_key(ACCEPT_ENCODING_HEADER) {
+                let gzip = http_request.headers.get(ACCEPT_ENCODING_HEADER).unwrap().split(',')
                     .map(|s| s.trim().to_string())
-                    .any(|s| s == "gzip");
+                    .any(|s| s == GZIP_VALUE);
 
-                if gzip {response.headers.insert("Content-Encoding".to_string(), "gzip".to_string());}
+                if gzip {response.headers.insert(CONTENT_ENCODING_HEADER.to_string(), GZIP_VALUE.to_string());}
             }
 
             reader.get_mut().write_all(&response.build()).unwrap();
@@ -65,7 +84,7 @@ fn handle_files_target(http_request: &HttpRequest) -> HttpResponse {
 
     //  TODO: all, post, get
     match http_request.method.as_str() {
-        "GET" => load_file(path.as_str()),
+        GET_METHOD => load_file(path.as_str()),
         _ => create_file(http_request, path.as_str())
     }
 }
@@ -76,23 +95,23 @@ fn create_file(http_request: &HttpRequest, path: &str) -> HttpResponse {
     fs::write(path, http_request.body.as_bytes()).expect("panic to write the file");
 
 
-    HttpResponse::new(201, "Created".to_string(),http_request, HashMap::new(), "".to_string())
+    HttpResponse::new(201, CREATED_REASON.to_string(),http_request, HashMap::new(), EMPTY_BODY.to_string())
 
 }
 fn load_file(path: &str) -> HttpResponse {
     let file_exists = fs::exists(path).unwrap();
     if !file_exists {
-        return HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from("").into_bytes())
+        return HttpResponse::new_no_compression(404, NOT_FOUND_REASON.to_string(), HashMap::new(), EMPTY_BODY.as_bytes().to_vec())
     }
 
     let file = fs::read(path).unwrap();
 
     let mut headers: HashMap<String, String> = HashMap::new();
-    headers.insert("Content-Type".to_string(), "application/octet-stream".to_string());
+    headers.insert(CONTENT_TYPE_HEADER.to_string(), OCTET_STREAM_CONTENT_TYPE.to_string());
     // headers.insert("Content-Length".to_string(), file.len().to_string());
 
 
-    HttpResponse::new_no_compression(200, "OK".to_string(), headers, file)
+    HttpResponse::new_no_compression(200, OK_REASON.to_string(), headers, file)
 }
 
 fn handle_echo_target(request: &HttpRequest) -> HttpResponse {
@@ -104,29 +123,29 @@ fn handle_echo_target(request: &HttpRequest) -> HttpResponse {
         .unwrap().trim();
 
     let mut reponse_headers: HashMap<String, String> = HashMap::new();
-    reponse_headers.insert("Content-Type".to_string(), "text/plain".to_string());
+    reponse_headers.insert(CONTENT_TYPE_HEADER.to_string(), TEXT_PLAIN_CONTENT_TYPE.to_string());
     // reponse_headers.insert("Content-Length".to_string(), content.len().to_string());
-    if request.headers.contains_key("Accept-Encoding") {
-        reponse_headers.insert("Accept-Encoding".to_string(), request.headers["Accept-Encoding"].to_string());
+    if request.headers.contains_key(ACCEPT_ENCODING_HEADER) {
+        reponse_headers.insert(ACCEPT_ENCODING_HEADER.to_string(), request.headers[ACCEPT_ENCODING_HEADER].to_string());
     }
 
 
-    HttpResponse::new(200, "OK".to_string(), request, reponse_headers, content.to_string())
+    HttpResponse::new(200, OK_REASON.to_string(), request, reponse_headers, content.to_string())
 }
 
 fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
-    let user_agent_header = http_request.headers.get("User-Agent");
+    let user_agent_header = http_request.headers.get(USER_AGENT_HEADER);
 
     let mut headers: HashMap<String, String> = HashMap::new();
-    headers.insert("Content-Type".to_string(), "text/plain".to_string());
+    headers.insert(CONTENT_TYPE_HEADER.to_string(), TEXT_PLAIN_CONTENT_TYPE.to_string());
     // headers.insert("Content-Length".to_string(), user_agent_header.unwrap().len().to_string());
 
-    HttpResponse::new(200, "OK".to_string(), http_request, headers, user_agent_header.unwrap().trim().to_string())
+    HttpResponse::new(200, OK_REASON.to_string(), http_request, headers, user_agent_header.unwrap().trim().to_string())
 }
 fn no_handlers_found() -> HttpResponse {
-    HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from("").into_bytes())
+    HttpResponse::new_no_compression(404, NOT_FOUND_REASON.to_string(), HashMap::new(), EMPTY_BODY.as_bytes().to_vec())
 }
 fn  handle_root_target() -> HttpResponse {
 
-    HttpResponse::new_no_compression(200, String::from("OK"), HashMap::new(), String::from("").into_bytes())
+    HttpResponse::new_no_compression(200, OK_REASON.to_string(), HashMap::new(), EMPTY_BODY.as_bytes().to_vec())
 }

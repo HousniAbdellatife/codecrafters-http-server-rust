@@ -5,6 +5,8 @@ use std::io::BufRead;
 const GET: &str = "GET";
 const POST: &str = "POST";
 
+const CRLF: &str = "\r\n";
+
 
 pub struct HttpRequest {
     pub method: String,
@@ -35,7 +37,7 @@ impl HttpRequest {
         loop {
             header.clear();
             reader.read_line(&mut header).unwrap();
-            if header.is_empty() || header == "\r\n" {
+            if header.is_empty() || header == CRLF {
                 break;
             } else {
                 let (k, v) = header.split_once(':').unwrap();
@@ -65,13 +67,14 @@ impl HttpRequest {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::format;
     use std::io::{BufReader, Cursor};
 
-    use super::HttpRequest;
+    use super::{HttpRequest, CRLF};
 
     #[test]
     fn parses_two_requests_from_one_buffered_connection() {
-        let input = b"GET / HTTP/1.1\r\n\r\nGET /echo/hello HTTP/1.1\r\n\r\n";
+        let input = format!("GET / HTTP/1.1{CRLF}{CRLF}GET /echo/hello HTTP/1.1{CRLF}{CRLF}");
         let mut reader = BufReader::new(Cursor::new(input));
 
         let first = HttpRequest::parse_next_request(&mut reader).unwrap();

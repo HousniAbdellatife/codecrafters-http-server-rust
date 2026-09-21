@@ -1,13 +1,9 @@
 use std::collections::HashMap;
-use std::fmt::format;
 use std::io::Write;
 use flate2::Compression;
 use flate2::write::GzEncoder;
 use crate::http::HttpRequest;
 
-pub const OK_200: &[u8] = b"HTTP/1.1 200 OK\r\n\r\n";
-pub const CREATED_201: &[u8] = b"HTTP/1.1 201 Created\r\n\r\n";
-pub const NOT_FOUND_404: &[u8] = b"HTTP/1.1 404 Not Found\r\n\r\n";
 const HTTP_VERSION: &str = "HTTP/1.1";
 const ACCEPT_ENCODING_HEADER : &str = "Accept-Encoding";
 const CONTENT_ENCODING_HEADER : &str = "Content-Encoding";
@@ -15,7 +11,7 @@ const GZIP: &str = "gzip";
 
 const CONTENT_LENGTH_HEADER : &str = "Content-Length";
 
-
+const CRLF: &str = "\r\n";
 
 pub struct HttpResponse {
     pub status_code: i32,
@@ -73,7 +69,7 @@ impl HttpResponse {
 
         // 2. Format the Status Line and extend it into the byte vector
         let status_line = format!(
-            "{} {} {}\r\n",
+            "{} {} {}{CRLF}",
             HTTP_VERSION,
             self.status_code,
             self.reason_phrase
@@ -83,7 +79,7 @@ impl HttpResponse {
         // 3. Add the Headers
         for (key, val) in &self.headers {
             let header_line = format!(
-                "{}: {}\r\n",
+                "{}: {}{CRLF}",
                 key.trim(),
                 val.trim()
             );
@@ -92,14 +88,14 @@ impl HttpResponse {
 
         // 4. Always specify the exact binary body byte length
         let content_length = format!(
-            "{}: {}\r\n",
+            "{}: {}{CRLF}",
             CONTENT_LENGTH_HEADER,
             self.body.len()
         );
         response.extend_from_slice(content_length.as_bytes());
 
         // 5. End the header section with the mandatory blank line boundary
-        response.extend_from_slice(b"\r\n");
+        response.extend_from_slice(CRLF.as_bytes());
 
         // 6. Directly append the raw binary body bytes (Zero-cost, zero allocations, no panics)
         response.extend_from_slice(&self.body);

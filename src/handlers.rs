@@ -77,7 +77,7 @@ fn create_file(http_request: &HttpRequest, path: &str) -> HttpResponse {
 fn load_file(path: &str) -> HttpResponse {
     let file_exists = fs::exists(path).unwrap();
     if !file_exists {
-        return HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from(""))
+        return HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from("").into_bytes())
     }
 
     let file = fs::read(path).unwrap();
@@ -87,7 +87,7 @@ fn load_file(path: &str) -> HttpResponse {
     headers.insert("Content-Length".to_string(), file.len().to_string());
 
 
-    HttpResponse::new_no_compression(200, "OK".to_string(), headers, String::from_utf8_lossy(&file).to_string())
+    HttpResponse::new_no_compression(200, "OK".to_string(), headers, file)
 }
 
 fn handle_echo_target(request: &HttpRequest) -> HttpResponse {
@@ -119,9 +119,9 @@ fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
     HttpResponse::new(200, "OK".to_string(), http_request, headers, user_agent_header.unwrap().trim().to_string())
 }
 fn no_handlers_found() -> HttpResponse {
-    HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from(""))
+    HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from("").into_bytes())
 }
 fn  handle_root_target() -> HttpResponse {
 
-    HttpResponse::new_no_compression(200, String::from("OK"), HashMap::new(), String::from(""))
+    HttpResponse::new_no_compression(200, String::from("OK"), HashMap::new(), String::from("").into_bytes())
 }

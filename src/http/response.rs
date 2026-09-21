@@ -16,13 +16,13 @@ pub struct HttpResponse {
     pub status_code: i32,
     pub reason_phrase: String,
     pub headers: HashMap<String, String>,
-    pub body: String,
+    pub body: Vec<u8>,
 }
 
 impl HttpResponse {
     pub fn new(status_code: i32, reason_phrase: String, request: &HttpRequest, mut response_headers: HashMap<String, String>, mut body: String) -> HttpResponse {
 
-        let mut compressed: String = body.clone();
+        let mut compressed: Vec<u8> = body.as_bytes().to_vec();
 
         if response_headers.contains_key("Accept-Encoding") && !body.is_empty() {
             let gzip = response_headers.get("Accept-Encoding").unwrap().split(',')
@@ -32,7 +32,7 @@ impl HttpResponse {
             if gzip {
                 response_headers.insert("Content-Encoding".to_string(), "gzip".to_string());
                 let result = Self::compress(body.as_str());
-                compressed = String::from_utf8(result.unwrap()).unwrap().to_string()
+                compressed = result.unwrap();
             }
         };
 
@@ -44,7 +44,7 @@ impl HttpResponse {
         }
     }
 
-    pub fn new_no_compression(status_code: i32, reason_phrase: String, headers: HashMap<String, String>, body: String) -> HttpResponse {
+    pub fn new_no_compression(status_code: i32, reason_phrase: String, headers: HashMap<String, String>, body: Vec<u8>) -> HttpResponse {
 
         HttpResponse {
             status_code,
@@ -90,7 +90,7 @@ impl HttpResponse {
         response.push_str("\r\n");
 
         // Body, possibly empty
-        response.push_str(&self.body);
+        response.push_str(String::from_utf8(self.body.clone()).unwrap().as_str());
 
         response
     }

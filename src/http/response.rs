@@ -21,6 +21,8 @@ pub struct HttpResponse {
 impl HttpResponse {
     pub fn new(status_code: i32, reason_phrase: String, mut headers: HashMap<String, String>, mut body: String) -> HttpResponse {
 
+        let mut compressed: String = body.clone();
+
         if headers.contains_key("Accept-Encoding") && !body.is_empty() {
             let gzip = headers.get("Accept-Encoding").unwrap().split(',')
                 .map(|s| s.trim().to_string())
@@ -29,7 +31,7 @@ impl HttpResponse {
             if gzip {
                 headers.insert("Content-Encoding".to_string(), "gzip".to_string());
                 let result = Self::compress(body.as_str());
-                body = String::from_utf8(result.unwrap()).unwrap().to_string()
+                compressed = String::from_utf8(result.unwrap()).unwrap().to_string()
             }
         };
 
@@ -37,7 +39,7 @@ impl HttpResponse {
             status_code,
             reason_phrase,
             headers,
-            body: String::from_utf8(Self::compress(body.as_str()).unwrap()).unwrap(),
+            body: compressed
         }
     }
 

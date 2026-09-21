@@ -1,8 +1,10 @@
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Read};
-use std::net::TcpStream;
+use std::io::BufRead;
 
-const CONTENT_LENGTH: &str = "Content-Length";
+
+const GET: &str = "GET";
+const POST: &str = "POST";
+
 
 pub struct HttpRequest {
     pub method: String,
@@ -12,21 +14,23 @@ pub struct HttpRequest {
 }
 
 impl HttpRequest {
-    pub fn parse(mut stream: &TcpStream) -> Result<HttpRequest, &'static str> {
+    pub fn parse_next_request(reader: &mut impl BufRead) -> Result<HttpRequest, &'static str> {
         let mut request_line = String::new();
         let mut headers: HashMap<String, String> = HashMap::new();
-        let mut body = String::new();
 
-        let mut reader = BufReader::new(&mut stream);
-
-        //
-        reader.read_line(&mut request_line).expect("TODO: panic message");
+        // read first line
+        if reader
+            .read_line(&mut request_line)
+            .map_err(|_| "failed to read request line")?
+            == 0
+        {
+            return Err("connection closed");
+        }
         let mut request_line = request_line.split_whitespace();
         let method = request_line.next().unwrap().to_string();
         let target = request_line.next().unwrap().to_string();
-        let http_version = request_line.next().unwrap().to_string();
 
-        //
+        // read headers
         let mut header = String::new();
         loop {
             header.clear();
@@ -39,15 +43,14 @@ impl HttpRequest {
             }
         }
 
-        //
-
+        // read body
         let mut body = String::new();
-        if method == "POST" {
+        if method == POST {
             let content_length = headers.get(crate::CONTENT_LENGTH).unwrap().parse::<i32>().unwrap();
             let mut body_u8 = vec![0u8; content_length as usize];
             reader.read_exact(&mut body_u8).unwrap();
             body.push_str(&String::from_utf8(body_u8).unwrap());
-        } else if method == "GET" {
+        } else if method == GET {
             body.push_str("");
         }
 
@@ -57,5 +60,24 @@ impl HttpRequest {
             headers,
             body,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{BufReader, Cursor};
+
+    use super::HttpRequest;
+
+    #[test]
+    fn parses_two_requests_from_one_buffered_connection() {
+        let input = b"GET / HTTP/1.1\r\n\r\nGET /echo/hello HTTP/1.1\r\n\r\n";
+        let mut reader = BufReader::new(Cursor::new(input));
+
+        let first = HttpRequest::parse_next_request(&mut reader).unwrap();
+        let second = HttpRequest::parse_next_request(&mut reader).unwrap();
+
+        assert_eq!(first.target, "/");
+        assert_eq!(second.target, "/echo/hello");
     }
 }

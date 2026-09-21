@@ -9,6 +9,11 @@ pub const OK_200: &[u8] = b"HTTP/1.1 200 OK\r\n\r\n";
 pub const CREATED_201: &[u8] = b"HTTP/1.1 201 Created\r\n\r\n";
 pub const NOT_FOUND_404: &[u8] = b"HTTP/1.1 404 Not Found\r\n\r\n";
 const HTTP_VERSION: &str = "HTTP/1.1";
+const ACCEPT_ENCODING_HEADER : &str = "Accept-Encoding";
+const CONTENT_ENCODING_HEADER : &str = "Content-Encoding";
+const GZIP: &str = "gzip"; 
+
+const CONTENT_LENGTH_HEADER : &str = "Content-Length";
 
 
 
@@ -24,13 +29,13 @@ impl HttpResponse {
 
         let mut compressed: Vec<u8> = body.as_bytes().to_vec();
 
-        if response_headers.contains_key("Accept-Encoding") && !body.is_empty() {
-            let gzip = response_headers.get("Accept-Encoding").unwrap().split(',')
+        if response_headers.contains_key(ACCEPT_ENCODING_HEADER) && !body.is_empty() {
+            let gzip = response_headers.get(ACCEPT_ENCODING_HEADER).unwrap().split(',')
                 .map(|s| s.trim().to_string())
-                .any(|s| s == "gzip");
+                .any(|s| s == GZIP);
 
             if gzip {
-                response_headers.insert("Content-Encoding".to_string(), "gzip".to_string());
+                response_headers.insert(CONTENT_ENCODING_HEADER.to_string(), GZIP.to_string());
                 let result = Self::compress(body.as_str());
                 compressed = result.unwrap();
             }
@@ -87,7 +92,8 @@ impl HttpResponse {
 
         // 4. Always specify the exact binary body byte length
         let content_length = format!(
-            "Content-Length: {}\r\n",
+            "{}: {}\r\n",
+            CONTENT_LENGTH_HEADER,
             self.body.len()
         );
         response.extend_from_slice(content_length.as_bytes());
@@ -99,25 +105,5 @@ impl HttpResponse {
         response.extend_from_slice(&self.body);
 
         response
-    }}
-
-
-pub fn text_plain(content: &str) -> Vec<u8> {
-    format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}",
-        content.len(),
-        content
-    )
-        .into_bytes()
-}
-
-pub fn octet_stream(file_bytes: &[u8]) -> Vec<u8> {
-    let header = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n",
-        file_bytes.len()
-    );
-
-    let mut response = header.into_bytes();
-    response.extend_from_slice(file_bytes);
-    response
+    }
 }

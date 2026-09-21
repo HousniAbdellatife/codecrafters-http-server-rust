@@ -1,7 +1,6 @@
-use std::{env, fs, thread};
+use std::{fs, thread};
 use std::collections::HashMap;
-use std::hash::Hash;
-use std::io::Write;
+use std::io::{BufReader, Write};
 use std::net::TcpStream;
 use std::path::Path;
 use crate::config::Config;
@@ -14,12 +13,17 @@ const FILES_TARGET: &str = "/files";
 const USER_AGENT_TARGET: &str = "/user-agent";
 
 const ECHO_TARGET: &str = "/echo";
-
-pub fn handle_connection(mut stream: TcpStream){
+pub fn handle_connection(stream: TcpStream){
     thread::spawn(move || {
+        // Keep this reader for the entire connection. It may already contain
+        // bytes belonging to the next pipelined request.
+        let mut reader = BufReader::new(stream);
+
         loop {
-            let mut http_request = HttpRequest::parse(&stream)
-                .unwrap();
+            let http_request = match HttpRequest::parse_next_request(&mut reader) {
+                Ok(request) => request,
+                Err(_) => break,
+            };
 
             let target = http_request.target.as_str();
 
@@ -45,8 +49,8 @@ pub fn handle_connection(mut stream: TcpStream){
                 if gzip {response.headers.insert("Content-Encoding".to_string(), "gzip".to_string());}
             }
 
-            stream.write_all(&response.build()).unwrap();
-            stream.flush();
+            reader.get_mut().write_all(&response.build()).unwrap();
+            reader.get_mut().flush().unwrap();
 
             if close { break }
         }

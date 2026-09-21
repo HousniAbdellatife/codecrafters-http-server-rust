@@ -116,12 +116,7 @@ fn handle_echo_target(http_request: &HttpRequest) -> HttpResponse {
     headers.insert("Content-Length".to_string(), content.len().to_string());
 
 
-    HttpResponse {
-        status_code: 200,
-        reason_phrase: "OK".to_string(),
-        headers,
-        body: content.to_string()
-    }
+    HttpResponse::new(200, "OK".to_string(), headers, content.to_string())
 }
 
 fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
@@ -131,26 +126,12 @@ fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
     headers.insert("Content-Type".to_string(), "text/plain".to_string());
     headers.insert("Content-Length".to_string(), user_agent_header.unwrap().len().to_string());
 
-    HttpResponse {
-        status_code: 200,
-        reason_phrase: "OK".to_string(),
-        headers,
-        body: user_agent_header.unwrap().to_string()
-    }
+    HttpResponse::new(200, "OK".to_string(), headers, user_agent_header.unwrap().trim().to_string())
 }
 fn no_handlers_found() -> HttpResponse {
-    HttpResponse {
-        status_code: 404,
-        reason_phrase: "Not Found".to_string(),
-        headers: HashMap::new(),
-        body: "".to_string(),
-    }
+    HttpResponse::new(404, String::from("Not Found"), HashMap::new(), String::from(""))
 }
 fn  handle_root_target() -> HttpResponse {
-    HttpResponse {
-        status_code: 200,
-        reason_phrase: "OK".to_string(),
-        headers: HashMap::new(),
-        body: "".to_string(),
-    }
+
+    HttpResponse::new(200, String::from("OK"), HashMap::new(), String::from(""))
 }

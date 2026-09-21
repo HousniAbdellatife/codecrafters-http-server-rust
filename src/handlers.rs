@@ -46,6 +46,7 @@ pub fn handle_connection(mut stream: TcpStream){
             }
 
             stream.write_all(&response.build()).unwrap();
+            stream.flush();
 
             if close { break }
         }
@@ -84,7 +85,7 @@ fn load_file(path: &str) -> HttpResponse {
 
     let mut headers: HashMap<String, String> = HashMap::new();
     headers.insert("Content-Type".to_string(), "application/octet-stream".to_string());
-    headers.insert("Content-Length".to_string(), file.len().to_string());
+    // headers.insert("Content-Length".to_string(), file.len().to_string());
 
 
     HttpResponse::new_no_compression(200, "OK".to_string(), headers, file)
@@ -100,7 +101,7 @@ fn handle_echo_target(request: &HttpRequest) -> HttpResponse {
 
     let mut reponse_headers: HashMap<String, String> = HashMap::new();
     reponse_headers.insert("Content-Type".to_string(), "text/plain".to_string());
-    reponse_headers.insert("Content-Length".to_string(), content.len().to_string());
+    // reponse_headers.insert("Content-Length".to_string(), content.len().to_string());
     if request.headers.contains_key("Accept-Encoding") {
         reponse_headers.insert("Accept-Encoding".to_string(), request.headers["Accept-Encoding"].to_string());
     }
@@ -114,7 +115,7 @@ fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
 
     let mut headers: HashMap<String, String> = HashMap::new();
     headers.insert("Content-Type".to_string(), "text/plain".to_string());
-    headers.insert("Content-Length".to_string(), user_agent_header.unwrap().len().to_string());
+    // headers.insert("Content-Length".to_string(), user_agent_header.unwrap().len().to_string());
 
     HttpResponse::new(200, "OK".to_string(), http_request, headers, user_agent_header.unwrap().trim().to_string())
 }

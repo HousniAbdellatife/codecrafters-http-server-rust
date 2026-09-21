@@ -45,7 +45,7 @@ pub fn handle_connection(mut stream: TcpStream){
                 if gzip {response.headers.insert("Content-Encoding".to_string(), "gzip".to_string());}
             }
 
-            stream.write_all(response.build().as_bytes()).unwrap();
+            stream.write_all(&response.build()).unwrap();
 
             if close { break }
         }

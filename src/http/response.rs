@@ -62,39 +62,44 @@ impl HttpResponse {
         encoder.finish()
     }
 
-    pub fn build(&self) -> String {
-        let mut response = String::new();
+    pub fn build(&self) -> Vec<u8> {
+        // 1. Initialize an empty byte vector instead of a String
+        let mut response = Vec::new();
 
-        response.push_str(&format!(
+        // 2. Format the Status Line and extend it into the byte vector
+        let status_line = format!(
             "{} {} {}\r\n",
             HTTP_VERSION,
             self.status_code,
             self.reason_phrase
-        ));
+        );
+        response.extend_from_slice(status_line.as_bytes());
 
+        // 3. Add the Headers
         for (key, val) in &self.headers {
-            response.push_str(&format!(
+            let header_line = format!(
                 "{}: {}\r\n",
                 key.trim(),
                 val.trim()
-            ));
+            );
+            response.extend_from_slice(header_line.as_bytes());
         }
 
-        // Always specify body length
-        response.push_str(&format!(
+        // 4. Always specify the exact binary body byte length
+        let content_length = format!(
             "Content-Length: {}\r\n",
             self.body.len()
-        ));
+        );
+        response.extend_from_slice(content_length.as_bytes());
 
-        // End headers
-        response.push_str("\r\n");
+        // 5. End the header section with the mandatory blank line boundary
+        response.extend_from_slice(b"\r\n");
 
-        // Body, possibly empty
-        response.push_str(String::from_utf8(self.body.clone()).unwrap().as_str());
+        // 6. Directly append the raw binary body bytes (Zero-cost, zero allocations, no panics)
+        response.extend_from_slice(&self.body);
 
         response
-    }
-}
+    }}
 
 
 pub fn text_plain(content: &str) -> Vec<u8> {

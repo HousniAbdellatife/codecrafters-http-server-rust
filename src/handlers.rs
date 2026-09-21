@@ -101,6 +101,9 @@ fn handle_echo_target(http_request: &HttpRequest) -> HttpResponse {
     let mut headers: HashMap<String, String> = HashMap::new();
     headers.insert("Content-Type".to_string(), "text/plain".to_string());
     headers.insert("Content-Length".to_string(), content.len().to_string());
+    if headers.contains_key("Accept-Encoding") {
+        headers.insert("Accept-Encoding".to_string(), headers["Accept-Encoding"].to_string());
+    }
 
 
     HttpResponse::new(200, "OK".to_string(), headers, content.to_string())

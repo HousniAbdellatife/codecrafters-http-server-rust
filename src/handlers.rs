@@ -71,13 +71,13 @@ fn create_file(http_request: &HttpRequest, path: &str) -> HttpResponse {
     fs::write(path, http_request.body.as_bytes()).expect("panic to write the file");
 
 
-    HttpResponse::new(201, "Created".to_string(), HashMap::new(), "".to_string())
+    HttpResponse::new(201, "Created".to_string(),http_request, HashMap::new(), "".to_string())
 
 }
 fn load_file(path: &str) -> HttpResponse {
     let file_exists = fs::exists(path).unwrap();
     if !file_exists {
-        return HttpResponse::new(404, String::from("Not Found"), HashMap::new(), String::from(""))
+        return HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from(""))
     }
 
     let file = fs::read(path).unwrap();
@@ -87,26 +87,26 @@ fn load_file(path: &str) -> HttpResponse {
     headers.insert("Content-Length".to_string(), file.len().to_string());
 
 
-    HttpResponse::new(200, "OK".to_string(), headers, String::from_utf8_lossy(&file).to_string())
+    HttpResponse::new_no_compression(200, "OK".to_string(), headers, String::from_utf8_lossy(&file).to_string())
 }
 
-fn handle_echo_target(http_request: &HttpRequest) -> HttpResponse {
+fn handle_echo_target(request: &HttpRequest) -> HttpResponse {
 
-    let content = http_request.target
+    let content = request.target
         .split('/')
         .skip(2)
         .next()
         .unwrap().trim();
 
-    let mut headers: HashMap<String, String> = HashMap::new();
-    headers.insert("Content-Type".to_string(), "text/plain".to_string());
-    headers.insert("Content-Length".to_string(), content.len().to_string());
-    if http_request.headers.contains_key("Accept-Encoding") {
-        headers.insert("Accept-Encoding".to_string(), http_request.headers["Accept-Encoding"].to_string());
+    let mut reponse_headers: HashMap<String, String> = HashMap::new();
+    reponse_headers.insert("Content-Type".to_string(), "text/plain".to_string());
+    reponse_headers.insert("Content-Length".to_string(), content.len().to_string());
+    if request.headers.contains_key("Accept-Encoding") {
+        reponse_headers.insert("Accept-Encoding".to_string(), request.headers["Accept-Encoding"].to_string());
     }
 
 
-    HttpResponse::new(200, "OK".to_string(), headers, content.to_string())
+    HttpResponse::new(200, "OK".to_string(), request, reponse_headers, content.to_string())
 }
 
 fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
@@ -116,12 +116,12 @@ fn handle_user_agent_target(http_request: &HttpRequest) -> HttpResponse {
     headers.insert("Content-Type".to_string(), "text/plain".to_string());
     headers.insert("Content-Length".to_string(), user_agent_header.unwrap().len().to_string());
 
-    HttpResponse::new(200, "OK".to_string(), headers, user_agent_header.unwrap().trim().to_string())
+    HttpResponse::new(200, "OK".to_string(), http_request, headers, user_agent_header.unwrap().trim().to_string())
 }
 fn no_handlers_found() -> HttpResponse {
-    HttpResponse::new(404, String::from("Not Found"), HashMap::new(), String::from(""))
+    HttpResponse::new_no_compression(404, String::from("Not Found"), HashMap::new(), String::from(""))
 }
 fn  handle_root_target() -> HttpResponse {
 
-    HttpResponse::new(200, String::from("OK"), HashMap::new(), String::from(""))
+    HttpResponse::new_no_compression(200, String::from("OK"), HashMap::new(), String::from(""))
 }

@@ -3,6 +3,7 @@ use std::fmt::format;
 use std::io::Write;
 use flate2::Compression;
 use flate2::write::GzEncoder;
+use crate::http::HttpRequest;
 
 pub const OK_200: &[u8] = b"HTTP/1.1 200 OK\r\n\r\n";
 pub const CREATED_201: &[u8] = b"HTTP/1.1 201 Created\r\n\r\n";
@@ -19,17 +20,17 @@ pub struct HttpResponse {
 }
 
 impl HttpResponse {
-    pub fn new(status_code: i32, reason_phrase: String, mut headers: HashMap<String, String>, mut body: String) -> HttpResponse {
+    pub fn new(status_code: i32, reason_phrase: String, request: &HttpRequest, mut response_headers: HashMap<String, String>, mut body: String) -> HttpResponse {
 
         let mut compressed: String = body.clone();
 
-        if headers.contains_key("Accept-Encoding") && !body.is_empty() {
-            let gzip = headers.get("Accept-Encoding").unwrap().split(',')
+        if response_headers.contains_key("Accept-Encoding") && !body.is_empty() {
+            let gzip = response_headers.get("Accept-Encoding").unwrap().split(',')
                 .map(|s| s.trim().to_string())
                 .any(|s| s == "gzip");
 
             if gzip {
-                headers.insert("Content-Encoding".to_string(), "gzip".to_string());
+                response_headers.insert("Content-Encoding".to_string(), "gzip".to_string());
                 let result = Self::compress(body.as_str());
                 compressed = String::from_utf8(result.unwrap()).unwrap().to_string()
             }
@@ -38,12 +39,22 @@ impl HttpResponse {
         HttpResponse {
             status_code,
             reason_phrase,
-            headers,
+            headers: response_headers,
             body: compressed
         }
     }
 
-    pub fn compress(input: &str) -> std::io::Result<Vec<u8>> {
+    pub fn new_no_compression(status_code: i32, reason_phrase: String, headers: HashMap<String, String>, body: String) -> HttpResponse {
+
+        HttpResponse {
+            status_code,
+            reason_phrase,
+            headers,
+            body
+        }
+    }
+
+    fn compress(input: &str) -> std::io::Result<Vec<u8>> {
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
 
         encoder.write_all(input.as_bytes())?;
